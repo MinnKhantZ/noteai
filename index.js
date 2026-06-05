@@ -41,7 +41,7 @@ function stripHtml(html) {
 
 const PROMPTS = {
   suggestions: (content) =>
-    `Review the following note and provide exactly 3 concise improvement suggestions. Return only the 3 suggestions, each on its own line, no numbering, no extra text.\n\nNote:\n${content}`,
+    `Rewrite the following note in 3 different ways to improve grammar, clarity, and style. Return only the 3 rewritten versions, each on its own line, no numbering, no extra text, no labels.\n\nNote:\n${content}`,
   summarize: (content) =>
     `Summarize the following note in 2-3 concise sentences. Return only the summary.\n\nNote:\n${content}`,
   "auto-title": (content) =>
