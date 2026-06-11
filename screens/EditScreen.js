@@ -18,7 +18,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import TagInput from "../components/TagInput";
 import AIBottomSheet from "../components/AIBottomSheet";
-import { loadNotes, saveNotes, loadFolders, createNote, stripHtml } from "../utils/storage";
+import { loadNotes, saveNotes, loadFolders, createNote } from "../utils/storage";
 import { useTheme } from "../contexts/ThemeContext";
 import { radius, shadows, typography } from "../theme";
 
@@ -68,7 +68,7 @@ export default function EditScreen({ route, navigation }) {
       const note = loadedNotes.find((n) => n.id === noteId);
       if (note) {
         setTitle(note.title || "");
-        setBody(stripHtml(note.content || ""));
+        setBody(note.content || "");
         setTags(note.tags || []);
         setFolderId(note.folderId || null);
         setIsPinned(note.isPinned || false);

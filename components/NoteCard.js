@@ -4,44 +4,57 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Animated,
 } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-} from "react-native-reanimated";
 import { Swipeable } from "react-native-gesture-handler";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { stripHtml, formatDate } from "../utils/storage";
+import { formatDate } from "../utils/storage";
 import { shadows, radius } from "../theme";
 
 export default function NoteCard({ note, onPress, onDelete, colors, index = 0 }) {
   const swipeableRef = useRef(null);
 
-  // Entrance animation
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(18);
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(18)).current;
+  const elevation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const delay = Math.min(index * 40, 300);
-    setTimeout(() => {
-      opacity.value = withTiming(1, { duration: 280 });
-      translateY.value = withSpring(0, { damping: 18, stiffness: 200 });
+    const timer = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 280,
+          useNativeDriver: true,
+        }),
+        Animated.spring(translateY, {
+          toValue: 0,
+          friction: 18,
+          tension: 200,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        Animated.timing(elevation, {
+          toValue: 3,
+          duration: 150,
+          useNativeDriver: false,
+        }).start();
+      });
     }, delay);
+    return () => clearTimeout(timer);
   }, []);
 
-  const animStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
+  const animStyle = {
+    opacity,
+    transform: [{ translateY }],
+  };
 
   const displayTitle =
     note.title ||
-    stripHtml(note.content).split(/[\n.!?]/)[0].trim() ||
+    (note.content || "").split(/[\n.!?]/)[0].trim() ||
     "Untitled note";
 
-  const preview = stripHtml(note.content);
+  const preview = note.content || "";
 
   const handleDelete = () => {
     swipeableRef.current?.close();
@@ -64,70 +77,75 @@ export default function NoteCard({ note, onPress, onDelete, colors, index = 0 })
 
   return (
     <Animated.View style={[styles.wrapper, animStyle]}>
-      <Swipeable
-        ref={swipeableRef}
-        renderRightActions={renderRightActions}
-        overshootRight={false}
-        friction={2}
+      <Animated.View
+        style={[
+          styles.card,
+          { backgroundColor: isPinned ? colors.pinned : colors.cardBg },
+          { elevation },
+        ]}
       >
-        <TouchableOpacity
-          style={[
-            styles.card,
-            { backgroundColor: isPinned ? colors.pinned : colors.cardBg },
-          ]}
-          onPress={onPress}
-          activeOpacity={0.78}
+        <Swipeable
+          ref={swipeableRef}
+          renderRightActions={renderRightActions}
+          overshootRight={false}
+          friction={2}
         >
-          {/* Left accent bar for pinned notes */}
-          {isPinned && (
-            <View
-              style={[styles.pinnedBar, { backgroundColor: colors.pinnedAccent }]}
-            />
-          )}
-          <View style={styles.cardContent}>
-            <View style={styles.titleRow}>
-              <Text
-                style={[styles.title, { color: colors.text }]}
-                numberOfLines={1}
-              >
-                {displayTitle}
-              </Text>
-              {isPinned && (
-                <MaterialCommunityIcons
-                  name="pin"
-                  size={13}
-                  color={colors.pinnedAccent}
-                />
-              )}
-            </View>
-            {preview.length > 0 && note.title ? (
-              <Text
-                style={[styles.preview, { color: colors.subtext }]}
-                numberOfLines={2}
-              >
-                {preview}
-              </Text>
-            ) : null}
-            {note.tags && note.tags.length > 0 && (
-              <View style={styles.tagsRow}>
-                {note.tags.slice(0, 4).map((tag) => (
-                  <View
-                    key={tag}
-                    style={[styles.tag, { backgroundColor: colors.tag }]}
-                  >
-                    <Text style={[styles.tagText, { color: colors.tagText }]}>
-                      #{tag}
-                    </Text>
-                  </View>
-                ))}
-              </View>
+          <TouchableOpacity
+            style={styles.cardInner}
+            onPress={onPress}
+            activeOpacity={0.78}
+          >
+            {/* Left accent bar for pinned notes */}
+            {isPinned && (
+              <View
+                style={[styles.pinnedBar, { backgroundColor: colors.pinnedAccent }]}
+              />
             )}
-            <Text style={[styles.date, { color: colors.subtext }]}>
-              {formatDate(note.updatedAt)}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </Swipeable>
+            <View style={styles.cardContent}>
+              <View style={styles.titleRow}>
+                <Text
+                  style={[styles.title, { color: colors.text }]}
+                  numberOfLines={1}
+                >
+                  {displayTitle}
+                </Text>
+                {isPinned && (
+                  <MaterialCommunityIcons
+                    name="pin"
+                    size={13}
+                    color={colors.pinnedAccent}
+                  />
+                )}
+              </View>
+              {preview.length > 0 && note.title ? (
+                <Text
+                  style={[styles.preview, { color: colors.subtext }]}
+                  numberOfLines={2}
+                >
+                  {preview}
+                </Text>
+              ) : null}
+              {note.tags && note.tags.length > 0 && (
+                <View style={styles.tagsRow}>
+                  {note.tags.slice(0, 4).map((tag) => (
+                    <View
+                      key={tag}
+                      style={[styles.tag, { backgroundColor: colors.tag }]}
+                    >
+                      <Text style={[styles.tagText, { color: colors.tagText }]}>
+                        #{tag}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+              <Text style={[styles.date, { color: colors.subtext }]}>
+                {formatDate(note.updatedAt)}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </Swipeable>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -139,9 +157,13 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: radius.md,
+    ...shadows.md,
+  },
+  cardInner: {
+    borderRadius: radius.md,
     flexDirection: "row",
     overflow: "hidden",
-    ...shadows.md,
+    backgroundColor: "transparent",
   },
   pinnedBar: {
     width: 4,
