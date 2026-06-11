@@ -1,0 +1,18 @@
+{
+  "name": "noteai",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=backend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm start --workspace=frontend",
+    "start": "npm start --workspace=backend",
+    "build": "npm run build --workspace=backend",
+    "lint": "echo 'No root lint configured'",
+    "db:migrate": "echo 'Add database commands here if needed'"
+  }
+}
